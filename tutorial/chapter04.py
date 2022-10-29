@@ -120,3 +120,21 @@ async def path_operation_configuration(user: UserIn):
 
 
 """【见run.py】FastAPI 应用的常见配置项"""
+
+"""Handling Errors 错误处理"""
+
+@app04.get("/http_exception")
+async def http_exception(city: str):
+    if city != "Beijing":
+        raise HTTPException(status_code=400, detail="City not found", headers={"X-Error":"Error"})
+    return {"city":city}
+    
+@app04.get("/http_exception/{city_id}")
+async def override_http_exception(city_id: int):
+    if city_id == 1:
+        raise HTTPException(status_code=418,detail="Nope! I don't like 1.")
+    test=await test_01()
+    return test
+    
+async def test_01():
+    return {"test":"test_await"}
