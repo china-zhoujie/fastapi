@@ -19,3 +19,8 @@ app07 = APIRouter(
     dependencies=[Depends(get_user_agent)],
     responses={200: {"description": "Good job!"}},
 )
+
+
+@app07.get("/bigger_applications")
+async def bigger_applications():
+    return {"message": "Bigger Applications - Multiple Files"}
