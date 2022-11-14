@@ -49,18 +49,18 @@ fake_users_db = {
 }
 
 
-def fake_hash_password(password: str):
+def fake_hash_password(password: str):#密码加密
     return "fakehashed" + password
 
 
-class User(BaseModel):
+class User(BaseModel):#请求格式
     username: str
     email: Optional[str] = None
     full_name: Optional[str] = None
     disabled: Optional[bool] = None
 
 
-class UserInDB(User):
+class UserInDB(User):#入库格式
     hashed_password: str
 
 
@@ -76,18 +76,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": user.username, "token_type": "bearer"}
 
 
-def get_user(db, username: str):
+def get_user(db, username: str):#获取用户信息
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
 
 
-def fake_decode_token(token: str):
+def fake_decode_token(token: str):#验证token
     user = get_user(fake_users_db, token)
     return user
 
 
-async def get_current_user(token: str = Depends(oauth2_schema)):
+async def get_current_user(token: str = Depends(oauth2_schema)):#获取当前用户
     user = fake_decode_token(token)
     if not user:
         raise HTTPException(
@@ -98,13 +98,13 @@ async def get_current_user(token: str = Depends(oauth2_schema)):
     return user
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(current_user: User = Depends(get_current_user)):#获取活跃用户
     if current_user.disabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
 
 
-@app06.get("/users/me")
+@app06.get("/users/me")#测试通过token获取用户信息
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
@@ -132,9 +132,9 @@ class Token(BaseModel):
     token_type: str
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")#密码加密
 
-oauth2_schema = OAuth2PasswordBearer(tokenUrl="/chapter06/jwt/token")
+oauth2_schema = OAuth2PasswordBearer(tokenUrl="/chapter06/jwt/token")#获取tokenurl路径
 
 
 def verity_password(plain_password: str, hashed_password: str):
@@ -142,13 +142,13 @@ def verity_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def jwt_get_user(db, username: str):
+def jwt_get_user(db, username: str):#获取用户信息
     if username in db:
         user_dict = db[username]
         return UserInDB(**user_dict)
 
 
-def jwt_authenticate_user(db, username: str, password: str):
+def jwt_authenticate_user(db, username: str, password: str):#验证用户信息
     user = jwt_get_user(db=db, username=username)
     if not user:
         return False
@@ -157,7 +157,7 @@ def jwt_authenticate_user(db, username: str, password: str):
     return user
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):#创建token
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -168,7 +168,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-@app06.post("/jwt/token", response_model=Token)
+@app06.post("/jwt/token", response_model=Token)#获取jwt接口
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = jwt_authenticate_user(db=fake_users_db, username=form_data.username, password=form_data.password)
     if not user:
@@ -184,7 +184,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-async def jwt_get_current_user(token: str = Depends(oauth2_schema)):
+async def jwt_get_current_user(token: str = Depends(oauth2_schema)):#获取当前用户
     credentials_exception = HTTPException(
         status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -203,12 +203,12 @@ async def jwt_get_current_user(token: str = Depends(oauth2_schema)):
     return user
 
 
-async def jwt_get_current_active_user(current_user: User = Depends(jwt_get_current_user)):
+async def jwt_get_current_active_user(current_user: User = Depends(jwt_get_current_user)):#获取活跃用户
     if current_user.disabled:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
 
 
-@app06.get("/jwt/users/me")
+@app06.get("/jwt/users/me")#测试通过token获取用户信息
 async def jwt_read_users_me(current_user: User = Depends(jwt_get_current_active_user)):
-    return 
+    return current_user
